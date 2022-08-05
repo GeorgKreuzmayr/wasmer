@@ -27,8 +27,7 @@ rayon = "1.5"
 loupe = "0.1"
 
 [dependencies.inkwell]
-package = "inkwell"
-version = "0.1.0-beta.4"
+path = "/home/georg/Uni/Thesis/inkwell"
 default-features = false
 features = ["llvm12-0", "target-x86", "target-aarch64"]
 

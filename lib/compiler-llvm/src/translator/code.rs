@@ -186,6 +186,8 @@ impl FuncTranslator {
         let mut params_locals = params.clone();
         params_locals.extend(locals.iter().cloned());
 
+        // println!("Create function code generator");
+
         let mut fcg = LLVMFunctionCodeGenerator {
             context: &self.ctx,
             builder,
@@ -230,6 +232,7 @@ impl FuncTranslator {
             pass_manager.add_verifier_pass();
         }
 
+        pass_manager.add_bounds_check_pass();
         pass_manager.add_type_based_alias_analysis_pass();
         pass_manager.add_sccp_pass();
         pass_manager.add_prune_eh_pass();
@@ -260,7 +263,7 @@ impl FuncTranslator {
         pass_manager.add_slp_vectorize_pass();
         pass_manager.add_early_cse_pass();
 
-        pass_manager.run_on(&module);
+         pass_manager.run_on(&module);
 
         if let Some(ref callbacks) = config.callbacks {
             callbacks.postopt_ir(&function, &module);
@@ -290,6 +293,9 @@ impl FuncTranslator {
             table_styles,
             symbol_registry,
         )?;
+        // println!("{}", module.print_to_string().to_str().unwrap());
+        // let path = Path::new(module.get_name().to_str().unwrap());
+        // module.print_to_file(&path).unwrap();
         let function = CompiledKind::Local(*local_func_index);
         let target_machine = &self.target_machine;
         let memory_buffer = target_machine
@@ -1097,6 +1103,24 @@ impl<'ctx, 'a> LLVMFunctionCodeGenerator<'ctx, 'a> {
                         let current_length = builder
                             .build_load(ptr_to_current_length, "")
                             .into_int_value();
+                        
+                        // setMetadata (on Instruction)
+                        // MDNode --> MDTuple create aus MetaData
+                        // MetaData Value as MetaData, Constant as Metadata, String rein schreiben
+                        // Damit man weiß das ist der WASM Bounds Check
+
+                        // Schaffen LLVM optimizer klar machen
+
+                        // Loop makeLoopInvariant(), schauen wer called makeLoopInvariant
+
+                        // Hint geben: Always smaller than X
+                        // Optimizer Assertions
+
+
+                        // llvm.invariant.start
+                        // llvm.expect
+                        // llvm.assume
+
                         tbaa_label(
                             self.module,
                             self.intrinsics,
@@ -1106,12 +1130,15 @@ impl<'ctx, 'a> LLVMFunctionCodeGenerator<'ctx, 'a> {
                         let current_length =
                             builder.build_int_z_extend(current_length, intrinsics.i64_ty, "");
 
-                        builder.build_int_compare(
+                        let cmp = builder.build_int_compare(
                             IntPredicate::ULE,
                             load_offset_end,
                             current_length,
                             "",
-                        )
+                        );
+
+                        cmp
+                        
                     });
                     if !ptr_in_bounds.is_constant_int()
                         || ptr_in_bounds.get_zero_extended_constant().unwrap() != 1
@@ -1139,11 +1166,12 @@ impl<'ctx, 'a> LLVMFunctionCodeGenerator<'ctx, 'a> {
                             context.append_basic_block(*function, "in_bounds_continue_block");
                         let not_in_bounds_block =
                             context.append_basic_block(*function, "not_in_bounds_block");
-                        builder.build_conditional_branch(
+                        let cond_br = builder.build_conditional_branch(
                             ptr_in_bounds,
                             in_bounds_continue_block,
                             not_in_bounds_block,
                         );
+                        cond_br.set_metadata(context.metadata_node(&[context.metadata_string("letstrytofindthis").into()]), 10);
                         builder.position_at_end(not_in_bounds_block);
                         builder.build_call(
                             intrinsics.throw_trap,

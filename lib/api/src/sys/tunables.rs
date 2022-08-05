@@ -46,7 +46,7 @@ impl BaseTunables {
                 // Static Memory Guard size:
                 //   Allocating 2 GiB of address space lets us translate wasm
                 //   offsets into x86 offsets as aggressively as we can.
-                PointerWidth::U64 => (0x1_0000.into(), 0x8000_0000),
+                PointerWidth::U64 => (0x1_0000.into(), 0x8000_0000), // Modify here
             };
 
         // Allocate a small guard to optimize common cases but without
@@ -69,22 +69,12 @@ impl BaseTunables {
 
 impl Tunables for BaseTunables {
     /// Get a `MemoryStyle` for the provided `MemoryType`
-    fn memory_style(&self, memory: &MemoryType) -> MemoryStyle {
-        // A heap with a maximum that doesn't exceed the static memory bound specified by the
-        // tunables make it static.
-        //
-        // If the module doesn't declare an explicit maximum treat it as 4GiB.
-        let maximum = memory.maximum.unwrap_or_else(Pages::max_value);
-        if maximum <= self.static_memory_bound {
-            MemoryStyle::Static {
-                // Bound can be larger than the maximum for performance reasons
-                bound: self.static_memory_bound,
-                offset_guard_size: self.static_memory_offset_guard_size,
-            }
-        } else {
-            MemoryStyle::Dynamic {
-                offset_guard_size: self.dynamic_memory_offset_guard_size,
-            }
+    fn memory_style(&self, _memory: &MemoryType) -> MemoryStyle {
+        // Always return MemoryStyle::Dynamic to replace Signal Handling
+        // illegal memory access with bounds checking
+        // This is done to make wasm usable in a Database System
+        MemoryStyle::Dynamic {
+            offset_guard_size: self.dynamic_memory_offset_guard_size,
         }
     }
 
