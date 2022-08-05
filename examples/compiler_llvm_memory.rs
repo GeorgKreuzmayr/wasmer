@@ -27,7 +27,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 (type $mem_size_t (func (result i32)))
 (type $get_at_t (func (param i32) (result i32)))
 (type $set_at_t (func (param i32) (param i32)))
+(type $t4 (func (param i32)))
 (type $access_smth_t (func (result i32)))
+
+(func $BM_memory_loop_std::__2::vector<int__std::__2::allocator<int>_>&_ (type $t4) (param $p0 i32)
+    (local $l1 i32) (local $l2 i32) (local $l3 i32) (local $l4 i32) (local $l5 i32) (local $l6 i32)
+    local.get $l1
+    i32.const 16
+    i32.sub
+    local.set $l1
+    i32.const 0
+    local.set $l2
+    i32.const 0
+    local.set $l3
+    loop $L0
+      local.get $l2
+      local.set $l4
+      local.get $l3
+      local.set $l5
+      loop $L1
+        local.get $l1
+        local.get $p0
+        i32.load
+        local.get $l4
+        i32.add
+        i32.load
+        i32.const 10
+        i32.add
+        i32.store offset=12
+        local.get $l4
+        i32.const 400000
+        i32.add
+        local.set $l4
+        local.get $l1
+        i32.const 12
+        i32.add
+        local.set $l6
+        local.get $l5
+        i32.const 100000
+        i32.add
+        local.tee $l5
+        i32.const 50000000
+        i32.lt_u
+        br_if $L1
+      end
+      local.get $l2
+      i32.const 4
+      i32.add
+      local.set $l2
+      local.get $l3
+      i32.const 1
+      i32.add
+      local.tee $l3
+      i32.const 100000
+      i32.ne
+      br_if $L0
+    end)
 
 (memory $mem 1)
 

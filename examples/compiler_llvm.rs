@@ -9,8 +9,34 @@
 //! ```
 //!
 //! Ready?
+//! 
+//! 
+/*
+#include <stdio.h>
 
-use wasmer::{imports, wat2wasm, Instance, Module, Store, Value};
+int test() {
+  int n, i, *ptr, sum = 0;
+  n = 100;
+
+  ptr = (int*) malloc(n * sizeof(int));
+ 
+  printf("Enter elements: ");
+  for(i = 0; i < n; ++i) {
+    *(ptr + i) = i;
+    sum += *(ptr + i);
+  }
+
+  for(i = 0; i < n; ++i) {
+    sum += *(ptr + i);
+  }
+  free(ptr);
+
+  return sum;
+}
+*/
+
+
+use wasmer::{imports, wat2wasm, Instance, Module, Store, Value, Val, Global, Memory, MemoryType};
 use wasmer_compiler_llvm::LLVM;
 use wasmer_engine_universal::Universal;
 
@@ -26,7 +52,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
           (type $t4 (func (param i32 i32 i32 i32 i32) (result i32)))
           (type $t5 (func (param i32)))
           (import "env" "__linear_memory" (memory $env.__linear_memory 1))
-          (import "env" "__indirect_function_table" (table $env.__indirect_function_table 0 funcref))
           (import "env" "__stack_pointer" (global $env.__stack_pointer (mut i32)))
           (import "env" "printf" (func $env.printf (type $t1)))
           (import "env" "fflush" (func $env.fflush (type $t3)))
@@ -703,7 +728,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let module = Module::new(&store, wasm_bytes)?;
 
     // Create an empty import object.
-    let import_object = imports! {};
+    let g1 = Global::new(&store, Val::I64(0));
+    // let g2 = Global::new(&store, Val::I64(0));
+    // let g3 = Memory::new(&store, )
+    let m = Memory::new(&store, MemoryType::new(1, None, false)).unwrap();
+
+
+    let import_object = imports! {
+        "dog" => {
+            "happy" => g1,
+        },
+        "env" => {
+          "__linear_memory" => m,
+      },
+    };
 
     println!("Instantiating module...");
     // Let's instantiate the Wasm module.
