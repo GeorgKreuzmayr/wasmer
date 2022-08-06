@@ -1171,7 +1171,7 @@ impl<'ctx, 'a> LLVMFunctionCodeGenerator<'ctx, 'a> {
                             in_bounds_continue_block,
                             not_in_bounds_block,
                         );
-                        cond_br.set_metadata(context.metadata_node(&[context.metadata_string("letstrytofindthis").into()]), 10);
+                        cond_br.set_metadata(context.metadata_node(&[context.metadata_string("wasmer_bounds_check").into()]), 10);
                         builder.position_at_end(not_in_bounds_block);
                         builder.build_call(
                             intrinsics.throw_trap,
