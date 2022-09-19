@@ -259,6 +259,7 @@ impl FuncTranslator {
         pass_manager.add_cfg_simplification_pass();
         pass_manager.add_slp_vectorize_pass();
         pass_manager.add_early_cse_pass();
+        pass_manager.add_ind_var_simplify_pass();
 
         pass_manager.run_on(&module);
 
@@ -1139,11 +1140,14 @@ impl<'ctx, 'a> LLVMFunctionCodeGenerator<'ctx, 'a> {
                             context.append_basic_block(*function, "in_bounds_continue_block");
                         let not_in_bounds_block =
                             context.append_basic_block(*function, "not_in_bounds_block");
-                        builder.build_conditional_branch(
+                        let cond_br = builder.build_conditional_branch(
                             ptr_in_bounds,
                             in_bounds_continue_block,
                             not_in_bounds_block,
                         );
+                        
+                        cond_br.set_metadata(context.metadata_node(&[context.metadata_string("wasmer_bounds_check").into()]), 30);
+
                         builder.position_at_end(not_in_bounds_block);
                         builder.build_call(
                             intrinsics.throw_trap,
