@@ -259,7 +259,6 @@ impl FuncTranslator {
         pass_manager.add_cfg_simplification_pass();
         pass_manager.add_slp_vectorize_pass();
         pass_manager.add_early_cse_pass();
-        pass_manager.add_ind_var_simplify_pass();
 
         pass_manager.run_on(&module);
 
